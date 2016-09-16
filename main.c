@@ -26,8 +26,8 @@ static void change_current_file(char *file_path);
 
 enum
 {
-    NOMAL_MODE,
-    AUTO_MODE
+    NOMAL,
+    AUTO
 } GAKVIEW_SIZE_MODE;
 
 enum
@@ -38,27 +38,33 @@ enum
     HYPER = GDK_INTERP_HYPER
 } GAKVIEW_QUALITY_MODE;
 
-typedef struct GakFiles
+typedef struct GakviewFile
 {
-    struct GakFiles *next;
-    gpointer data;
-    struct GakFiles *previous;
-} GakFiles;
+	GdkPixbuf *pixbuf;
+	unsigned int width;
+	unsigned int height;
+    gpointer path;
+    struct GakviewFile *next;
+    struct GakviewFile *previous;
+} GakviewFile;
+
+typedef struct GakView
+{
+    GtkWidget *window;
+    GtkWidget *scroll_box;
+    GtkWidget *view_box;
+    GtkWidget *image;
+    GtkWidget *about;
+    GakviewFile *file;
+    unsigned int zoom_count;
+} GakView;
+
+GakView _gakview;
+GakView *gakview = &_gakview;
+GakviewFile _file;
 
 // Declare variable
-GtkWidget *window;
-GtkWidget *scroll_box;
-GtkWidget *view_box;
-GtkWidget *image;
-GtkWidget *about;
-GdkPixbuf *pixbuf;
-GakFiles _gak_files;
-GakFiles *gak_files = &_gak_files;
-gchar *file_name;
 GSList *file_list;
-unsigned int pixbuf_width;
-unsigned int pixbuf_height;
-unsigned int zoom_count = 100;
 
 int main (int argc, char **argv)
 {
@@ -80,36 +86,40 @@ static void gakview_init (GtkApplication *app, gpointer user_data)
     GtkBuilder *builder = gtk_builder_new();
     gtk_builder_add_from_file(builder, "./ui.glade", NULL);
 
-    scroll_box = GTK_WIDGET(gtk_builder_get_object(builder, "scroll_box"));
-    view_box = GTK_WIDGET(gtk_builder_get_object(builder, "view_box"));
-    image = GTK_WIDGET(gtk_builder_get_object(builder, "image"));
-    about = GTK_WIDGET(gtk_builder_get_object(builder, "about"));
+    gakview -> scroll_box = GTK_WIDGET(gtk_builder_get_object(builder, "scroll_box"));
+    gakview -> view_box = GTK_WIDGET(gtk_builder_get_object(builder, "view_box"));
+    gakview -> image = GTK_WIDGET(gtk_builder_get_object(builder, "image"));
+    gakview -> about = GTK_WIDGET(gtk_builder_get_object(builder, "about"));
 
     /*-- Init Setting --------------------------------------------------*/
-    // pixbuf
-    change_current_file("./images/failed.jpg");
-    GAKVIEW_QUALITY_MODE = HYPER;
-
+gakview -> file = &_file;
     // window
-    window = gtk_application_window_new (app);
-    gtk_container_add(GTK_CONTAINER(window), scroll_box);
-    gtk_window_set_title (GTK_WINDOW (window), "GakView");
+    gakview -> window = gtk_application_window_new (app);
+    change_current_file("./images/failed.jpg");
+    gtk_container_add(GTK_CONTAINER(gakview -> window), gakview -> scroll_box);
+    gtk_window_set_title (GTK_WINDOW (gakview -> window), "GakView");
     gtk_window_set_default_size(
-        GTK_WINDOW(window),
-        gdk_pixbuf_get_width(pixbuf) + 5,
-        gdk_pixbuf_get_height(pixbuf) + 5
+        GTK_WINDOW(gakview -> window),
+        gdk_pixbuf_get_width(gakview -> file -> pixbuf) + 5,
+        gdk_pixbuf_get_height(gakview -> file -> pixbuf) + 5
     );
-    GAKVIEW_SIZE_MODE = AUTO_MODE;
+    GAKVIEW_SIZE_MODE = AUTO;
+
+    // zoom
+    gakview -> zoom_count = 100;
+
+    // pixbuf
+    GAKVIEW_QUALITY_MODE = HYPER;
 
     /*-- Gmenu ---------------------------------------------------------*/
     gakview_gmenu_create(app);
 
     /*-- Signal --------------------------------------------------------*/
-    g_signal_connect(window, "configure-event", G_CALLBACK(gakview_image_zoom_auto), NULL);
-    g_signal_connect(window, "key-press-event", G_CALLBACK(gakview_input_key), NULL);
+    g_signal_connect(gakview -> window, "configure-event", G_CALLBACK(gakview_image_zoom_auto), NULL);
+    g_signal_connect(gakview -> window, "key-press-event", G_CALLBACK(gakview_input_key), NULL);
 
     /*-- Finish --------------------------------------------------------*/
-    gtk_widget_show_all (window);
+    gtk_widget_show_all (gakview -> window);
     g_object_unref(G_OBJECT(builder));
 }
 
@@ -120,20 +130,20 @@ void gakview_image_zoom_auto(GtkWindow *widget, GdkEvent *event, gpointer data)
     UNUSED(event);
     UNUSED(data);
 
-    unsigned int view_box_width = gtk_widget_get_allocated_width(view_box);
-    unsigned int view_box_height = gtk_widget_get_allocated_height(view_box);
-    if(pixbuf_width < view_box_width && pixbuf_height < view_box_height)
+    unsigned int view_box_width = gtk_widget_get_allocated_width(gakview -> view_box);
+    unsigned int view_box_height = gtk_widget_get_allocated_height(gakview -> view_box);
+    if(gakview -> file -> width < view_box_width && gakview -> file -> height < view_box_height)
     {
-        gtk_image_set_from_pixbuf(GTK_IMAGE(image), pixbuf);
+        gtk_image_set_from_pixbuf(GTK_IMAGE(gakview -> image), gakview -> file -> pixbuf);
         return;
     }
 
     GdkPixbuf *tempbuf;
-    if(pixbuf_height * view_box_width / pixbuf_width > view_box_height)
+    if(gakview -> file -> height * view_box_width / gakview -> file -> width > view_box_height)
     {
         tempbuf = gdk_pixbuf_scale_simple(
-            pixbuf,
-            pixbuf_width * view_box_height / pixbuf_height,
+            gakview -> file -> pixbuf,
+            gakview -> file -> width * view_box_height / gakview -> file -> height,
             view_box_height,
             GAKVIEW_QUALITY_MODE
         );
@@ -141,17 +151,17 @@ void gakview_image_zoom_auto(GtkWindow *widget, GdkEvent *event, gpointer data)
     else
     {
         tempbuf = gdk_pixbuf_scale_simple(
-            pixbuf,
+            gakview -> file -> pixbuf,
             view_box_width,
-            pixbuf_height * view_box_width / pixbuf_width,
+            gakview -> file -> height * view_box_width / gakview -> file -> width,
             GAKVIEW_QUALITY_MODE
         );
     }
-    gtk_image_set_from_pixbuf(GTK_IMAGE(image), tempbuf);
+    gtk_image_set_from_pixbuf(GTK_IMAGE(gakview -> image), tempbuf);
 
     // Next code is used to redraw for window.
     g_object_unref(G_OBJECT(tempbuf));
-    gtk_widget_queue_draw(window);
+    gtk_widget_queue_draw(gakview -> window);
 }
 
 // SubMenu "Open"
@@ -162,7 +172,7 @@ void gakview_gmenu_open(GSimpleAction *action, GVariant *parameter, gpointer dat
     UNUSED(data);
 
     GtkWidget *dialog = gtk_file_chooser_dialog_new ("Open File",
-    GTK_WINDOW(window),
+    GTK_WINDOW(gakview -> window),
     GTK_FILE_CHOOSER_ACTION_OPEN,
     ("_Open"),
     GTK_RESPONSE_ACCEPT,
@@ -199,32 +209,32 @@ void gakview_gmenu_open(GSimpleAction *action, GVariant *parameter, gpointer dat
         file_list = gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(dialog));
 
         // TODO
-        // GakFiles
-        GakFiles *current_file = gak_files;
+        // GakviewFile
+        GakviewFile *current_file = gakview -> file;
         GSList *temp_gslist = file_list;
         while(temp_gslist)
         {
-            current_file -> data = temp_gslist -> data;
+            current_file -> path = temp_gslist -> data;
 
             if(temp_gslist -> next)
             {
-                GakFiles *next_file = (GakFiles*)malloc(sizeof(GakFiles));
-                current_file -> next = (GakFiles*)next_file;
+                GakviewFile *next_file = (GakviewFile*)malloc(sizeof(GakviewFile));
+                current_file -> next = (GakviewFile*)next_file;
                 next_file -> previous = current_file;
             }
             else
             {
-                current_file -> next = gak_files;
-                gak_files -> previous = current_file;
+                current_file -> next = gakview -> file;
+                gakview -> file -> previous = current_file;
             }
             current_file = current_file -> next;
             temp_gslist = temp_gslist -> next;
         }
 
         // Resizing image
-        if(GAKVIEW_SIZE_MODE == NOMAL_MODE)
-        gtk_image_set_from_pixbuf(GTK_IMAGE(image), pixbuf);
-        else if (GAKVIEW_SIZE_MODE == AUTO_MODE)
+        if(GAKVIEW_SIZE_MODE == NOMAL)
+        gtk_image_set_from_pixbuf(GTK_IMAGE(gakview -> image), gakview -> file -> pixbuf);
+        else if (GAKVIEW_SIZE_MODE == AUTO)
         gakview_image_zoom_auto(NULL, NULL, NULL);
     }
     gtk_widget_destroy(dialog);
@@ -236,8 +246,8 @@ void gakview_gmenu_about (GSimpleAction *action, GVariant *parameter, gpointer d
     UNUSED(parameter);
     UNUSED(data);
 
-    gtk_dialog_run(GTK_DIALOG(about));
-    gtk_widget_hide(about);
+    gtk_dialog_run(GTK_DIALOG(gakview -> about));
+    gtk_widget_hide(gakview -> about);
 }
 
 // SubMenu "Quit"
@@ -247,7 +257,7 @@ void gakview_gmenu_quit (GSimpleAction *action, GVariant *parameter, gpointer da
     UNUSED(parameter);
     UNUSED(data);
 
-    gtk_widget_destroy(window);
+    gtk_widget_destroy(gakview -> window);
 }
 
 void gakview_gmenu_mode_size_nomal (GSimpleAction *action, GVariant *parameter, gpointer data)
@@ -256,9 +266,9 @@ void gakview_gmenu_mode_size_nomal (GSimpleAction *action, GVariant *parameter, 
     UNUSED(parameter);
     UNUSED(data);
 
-    GAKVIEW_SIZE_MODE = NOMAL_MODE;
-    gtk_image_set_from_pixbuf(GTK_IMAGE(image), pixbuf);
-    zoom_count = 100;
+    GAKVIEW_SIZE_MODE = NOMAL;
+    gtk_image_set_from_pixbuf(GTK_IMAGE(gakview -> image), gakview -> file -> pixbuf);
+    gakview -> zoom_count = 100;
 }
 
 void gakview_gmenu_mode_size_auto (GSimpleAction *action, GVariant *parameter, gpointer data)
@@ -267,8 +277,8 @@ void gakview_gmenu_mode_size_auto (GSimpleAction *action, GVariant *parameter, g
     UNUSED(parameter);
     UNUSED(data);
 
-    if(GAKVIEW_SIZE_MODE != AUTO_MODE)
-    GAKVIEW_SIZE_MODE = AUTO_MODE;
+    if(GAKVIEW_SIZE_MODE != AUTO)
+    GAKVIEW_SIZE_MODE = AUTO;
     gakview_image_zoom_auto(NULL, NULL, NULL);
 }
 
@@ -280,7 +290,7 @@ void gakview_input_key(GtkWidget *widget, GdkEventKey *event, gpointer data)
     switch(event -> keyval)
     {
         case GDK_KEY_Escape:
-        gtk_widget_destroy(window);
+        gtk_widget_destroy(gakview -> window);
         break;
         case GDK_KEY_F1:
         gakview_gmenu_about(NULL, NULL, NULL);
@@ -308,16 +318,16 @@ void gakview_input_key(GtkWidget *widget, GdkEventKey *event, gpointer data)
 
 void gakview_image_zoom_in()
 {
-    if(GAKVIEW_SIZE_MODE != NOMAL_MODE || zoom_count >= 500)
+    if(GAKVIEW_SIZE_MODE != NOMAL || gakview -> zoom_count >= 500)
     return;
-    zoom_count += 5;
+    gakview -> zoom_count += 5;
 
     GdkPixbuf *tempbuf = gdk_pixbuf_scale_simple(
-        pixbuf,
-        gdk_pixbuf_get_width(pixbuf) * zoom_count / 100,
-        gdk_pixbuf_get_height(pixbuf) * zoom_count / 100,
+        gakview -> file -> pixbuf,
+        gdk_pixbuf_get_width(gakview -> file -> pixbuf) * gakview -> zoom_count / 100,
+        gdk_pixbuf_get_height(gakview -> file -> pixbuf) * gakview -> zoom_count / 100,
         GAKVIEW_QUALITY_MODE);
-        gtk_image_set_from_pixbuf(GTK_IMAGE(image), tempbuf
+        gtk_image_set_from_pixbuf(GTK_IMAGE(gakview -> image), tempbuf
     );
 
     g_object_unref(G_OBJECT(tempbuf));
@@ -325,44 +335,44 @@ void gakview_image_zoom_in()
 
 void gakview_image_zoom_out()
 {
-    if(GAKVIEW_SIZE_MODE != NOMAL_MODE || zoom_count <= 10)
+    if(GAKVIEW_SIZE_MODE != NOMAL || gakview -> zoom_count <= 10)
     return;
 
-    zoom_count -= 5;
+    gakview -> zoom_count -= 5;
 
     GdkPixbuf *tempbuf = gdk_pixbuf_scale_simple(
-        pixbuf,
-        gdk_pixbuf_get_width(pixbuf) * zoom_count / 100,
-        gdk_pixbuf_get_height(pixbuf) * zoom_count / 100,
+        gakview -> file -> pixbuf,
+        gdk_pixbuf_get_width(gakview -> file -> pixbuf) * gakview -> zoom_count / 100,
+        gdk_pixbuf_get_height(gakview -> file -> pixbuf) * gakview -> zoom_count / 100,
         GAKVIEW_QUALITY_MODE
     );
-    gtk_image_set_from_pixbuf(GTK_IMAGE(image), tempbuf);
+    gtk_image_set_from_pixbuf(GTK_IMAGE(gakview -> image), tempbuf);
 
     g_object_unref(G_OBJECT(tempbuf));
 }
 
 void gakview_image_next()
 {
-    gak_files = gak_files -> next;
-    change_current_file(gak_files->data);
+    gakview -> file = gakview -> file -> next;
+    change_current_file(gakview -> file -> path);
 }
 
 void gakview_image_previous()
 {
-    gak_files = gak_files -> previous;
-    change_current_file(gak_files->data);
+    gakview -> file = gakview -> file -> previous;
+    change_current_file(gakview -> file-> path);
 }
 
 static void change_current_file(char *file_path)
 {
-    gtk_window_set_title(GTK_WINDOW(window), file_name);
-    file_name = file_path;
-    pixbuf = gdk_pixbuf_new_from_file(file_path, NULL);
-    pixbuf_width = gdk_pixbuf_get_width(pixbuf);
-    pixbuf_height = gdk_pixbuf_get_height(pixbuf);
-    if(GAKVIEW_SIZE_MODE == NOMAL_MODE);
+    gtk_window_set_title(GTK_WINDOW(gakview -> window), file_path);
+    gakview -> file -> path = (gpointer)file_path;
+    gakview -> file -> pixbuf = gdk_pixbuf_new_from_file(file_path, NULL);
+    gakview -> file -> width = gdk_pixbuf_get_width(gakview -> file -> pixbuf);
+    gakview -> file -> height = gdk_pixbuf_get_height(gakview -> file -> pixbuf);
+    if(GAKVIEW_SIZE_MODE == NOMAL);
     // zoom(0);
-    else if(GAKVIEW_SIZE_MODE == AUTO_MODE)
+    else if(GAKVIEW_SIZE_MODE == AUTO)
     gakview_gmenu_mode_size_auto(NULL, NULL, NULL);
 }
 
