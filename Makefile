@@ -1,22 +1,23 @@
-CPP = main.cpp \
-			gakview.cpp \
-			gakview_window.cpp \
-			gakview_image.cpp \
-			gakview_filemanager.cpp
+CPP = src/main.cpp \
+			src/application.cpp \
+			src/window.cpp \
+			src/image.cpp
 
 LIB = -lSDL2 \
 			-lboost_filesystem \
 			-lboost_system
+
+INCLUDE_PATH = -Iinclude
 
 FLAGS = -Wall \
 				-Wextra \
 				-std=c++14 \
 
 clang++ : clean
-	clang++ $(FLAGS) $(CPP) -g -o gakview -I. $(LIB)
+	clang++ $(FLAGS) $(CPP) -g -o gakview $(INCLUDE_PATH) $(LIB)
 
 g++ : clean
-	g++ $(FLAGS) $(CPP) -g -o gakview -I. $(LIB)
+	g++ $(FLAGS) $(CPP) -g -o gakview $(INCLUDE_PATH) $(LIB)
 
 clean :
 	rm -f gakview
