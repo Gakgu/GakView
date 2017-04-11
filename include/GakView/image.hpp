@@ -16,13 +16,11 @@ class Image
     Image() {}
     // method
     bool Init(char **argv);
-    SDL_Surface* GetSurface() const {return info.image_surface;}
     void Next();
     void Previous();
     // variable
     struct image_info
     {
-      SDL_Surface* image_surface = NULL;
       int index = 0;
       FileList files;// current file is file[index]
     } info;

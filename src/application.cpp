@@ -20,7 +20,7 @@ gakview::Application::~Application()
 void gakview::Application::Run()
 {
   m_image->Init(m_argv);
-  m_window->Create(*m_image);
+  m_window->Create();
   m_window->Update(*m_image);
 
   bool quit = false;
