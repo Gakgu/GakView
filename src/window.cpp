@@ -10,7 +10,7 @@ gakview::Window::~Window()
   SDL_Quit();
 }
 
-bool gakview::Window::Create(gakview::Image &image)
+bool gakview::Window::Create()
 {
   SDL_Init(SDL_INIT_VIDEO);
   m_window = SDL_CreateWindow(
@@ -21,7 +21,6 @@ bool gakview::Window::Create(gakview::Image &image)
       480,
       SDL_WINDOW_SHOWN);
   m_window_surface = SDL_GetWindowSurface(m_window);
-  m_image_surface = image.GetSurface(); // TODO move This line if no problem
 
   // Clear screen
   SDL_FillRect(m_window_surface, NULL,

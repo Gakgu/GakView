@@ -11,7 +11,7 @@ class Window
   public:
     Window() : m_window(NULL), m_window_surface(NULL), m_image_surface(NULL) {}
     ~Window();
-    bool Create(Image &image);
+    bool Create();
     void Update(Image &image);
   private:
     SDL_Window *m_window;
