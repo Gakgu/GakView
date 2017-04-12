@@ -23,8 +23,6 @@ bool gakview::Window::Create()
   m_window_surface = SDL_GetWindowSurface(m_window);
 
   // Clear screen
-  SDL_FillRect(m_window_surface, NULL,
-      SDL_MapRGB(m_window_surface->format, 0x00, 0x00, 0x00));
   SDL_UpdateWindowSurface(m_window);
 
   return true;
@@ -32,6 +30,11 @@ bool gakview::Window::Create()
 
 void gakview::Window::Update(gakview::Image &image)
 {
+  // Clear screen
+  SDL_FillRect(m_window_surface, NULL,
+      SDL_MapRGB(m_window_surface->format, 0x00, 0x00, 0x00));
+
+  // Display image on window
   File file = image->files[image->index];
   m_image_surface = SDL_LoadBMP(file.c_str());
   if(!SDL_BlitSurface(m_image_surface, NULL, m_window_surface, NULL))

@@ -8,7 +8,6 @@ gakview::Application::Application(int argc, char **argv)
   // TODO : Use shared_ptr or unique_ptr
   m_window = new Window;
   m_image = new Image;
-  SDL_Delay(2000);
 }
 
 gakview::Application::~Application()
