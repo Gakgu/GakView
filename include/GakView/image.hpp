@@ -5,30 +5,22 @@
 #include <vector>
 #include <SDL2/SDL.h>
 
-typedef std::string File;
-typedef std::vector<std::string> FileList;
-
 namespace gakview
 {
 class Image
 {
   public:
-    Image() {}
-    // method
-    bool Init(char **argv);
-    void Next();
-    void Previous();
-    // variable
-    struct image_info
-    {
-      int index = 0;
-      FileList files;// current file is file[index]
-    } info;
-    // operator
-    const image_info* operator->() const { return &info; }
+    Image() : m_fileList(), m_index(-1) {}
+    int Next();
+    int Previous();
+    std::string GetFilePath(char const **argv);
+    std::string GetFileName(char const **argv);
+    std::string GetImagePath(){ return std::string(); }
+    int SetFileList(char const **argv);
+    int SetIndex(char const **argv);
+    std::vector<std::string> m_fileList;
+    int m_index;
   private:
-    bool IndexInit(char **argv);
-
     // Disallow copy constructor and assignment operator.
     Image(const Image&);
     void operator=(const Image&);

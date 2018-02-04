@@ -1,7 +1,8 @@
 #include "GakView/window.hpp"
-#include "GakView/image.hpp"
 
-gakview::Window::~Window()
+namespace gakview
+{
+Window::~Window()
 {
   if(m_window_surface)
     SDL_FreeSurface(m_window_surface);
@@ -10,9 +11,13 @@ gakview::Window::~Window()
   SDL_Quit();
 }
 
-bool gakview::Window::Create()
+int Window::Create()
 {
-  SDL_Init(SDL_INIT_VIDEO);
+  int succes = 0;
+
+  if(SDL_Init(SDL_INIT_VIDEO) != 0)
+    succes = -1;
+
   m_window = SDL_CreateWindow(
       "GakView",
       SDL_WINDOWPOS_UNDEFINED,
@@ -20,23 +25,39 @@ bool gakview::Window::Create()
       640,
       480,
       SDL_WINDOW_SHOWN);
+  if(m_window == NULL)
+    succes = -1;
+
   m_window_surface = SDL_GetWindowSurface(m_window);
+  if(m_window_surface == NULL)
+    succes = -1;
 
   // Clear screen
   SDL_UpdateWindowSurface(m_window);
 
-  return true;
+  return succes;;
 }
 
-void gakview::Window::Update(gakview::Image &image)
+int Window::Update(std::string &image_path)
 {
+  int succes = 0;
+  /*
   // Clear screen
-  SDL_FillRect(m_window_surface, NULL,
-      SDL_MapRGB(m_window_surface->format, 0x00, 0x00, 0x00));
+  if(SDL_FillRect(m_window_surface, NULL,
+        SDL_MapRGB(m_window_surface->format, 0x00, 0x00, 0x00)) != 0)
+    succes = -1;
+  */
 
-  // Display image on window
-  File file = image->files[image->index];
-  m_image_surface = SDL_LoadBMP(file.c_str());
-  if(!SDL_BlitSurface(m_image_surface, NULL, m_window_surface, NULL))
-    SDL_UpdateWindowSurface(m_window);
+  if(image_path != std::string())
+  {
+    m_image_surface = IMG_Load(image_path.c_str());
+    if(m_image_surface == NULL)
+      succes = -1;
+
+    if(!SDL_BlitSurface(m_image_surface, NULL, m_window_surface, NULL))
+      SDL_UpdateWindowSurface(m_window);
+  }
+
+  return succes;
+}
 }

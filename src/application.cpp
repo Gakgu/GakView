@@ -1,27 +1,27 @@
 #include "GakView/application.hpp"
-#include "GakView/image.hpp"
-#include "GakView/window.hpp"
 
-gakview::Application::Application(int argc, char **argv)
-  : m_window(NULL), m_image(NULL), m_argc(argc), m_argv(argv)
+namespace gakview
 {
-  // TODO : Use shared_ptr or unique_ptr
-  m_window = new Window;
-  m_image = new Image;
+Application::Application(char const **argv) : m_succes_init(-1)
+{
+  Init(argv);
 }
 
-gakview::Application::~Application()
+int Application::Init(char const **argv)
 {
-  delete m_image;
-  delete m_window;
+  if(m_image.SetFileList(argv) == 0)
+    if(m_window.Create() == 0)
+      m_succes_init = 0;
+
+  return m_succes_init;
 }
 
-void gakview::Application::Run()
+int Application::Run()
 {
-  m_image->Init(m_argv);
-  m_window->Create();
-  m_window->Update(*m_image);
+  if(m_succes_init != 0)
+    return 0;
 
+  int succes = 0;
   bool quit = false;
   SDL_Event event;
   while(!quit)
@@ -38,15 +38,25 @@ void gakview::Application::Run()
             quit = true;
             break;
           case SDLK_LEFT:
-            m_image->Previous();
-            m_window->Update(*m_image);
+            if(m_image.Previous())
+              if(!m_window.Update(m_image.m_fileList.at(m_image.m_index)))
+              {
+                succes = -1;
+                quit = true;
+              }
             break;
           case SDLK_RIGHT:
-            m_image->Next();
-            m_window->Update(*m_image);
+            if(m_image.Next())
+              if(m_window.Update(m_image.m_fileList.at(m_image.m_index)))
+              {
+                succes = -1;
+                quit = true;
+              }
             break;
         }
       }
     }
   }
+  return succes;
+}
 }

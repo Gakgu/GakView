@@ -1,0 +1,57 @@
+Running main() from gtest_main.cc
+[==========] Running 4 tests from 3 test cases.
+[----------] Global test environment set-up.
+[----------] 2 tests from Window
+[ RUN      ] Window.Create
+[       OK ] Window.Create (156 ms)
+[ RUN      ] Window.Update
+[       OK ] Window.Update (0 ms)
+[----------] 2 tests from Window (156 ms total)
+
+[----------] 1 test from Image
+[ RUN      ] Image.SetIndex
+test_image.cpp:23: Failure
+      Expected: 0
+To be equal to: i.SetIndex(e)
+      Which is: -1
+hihihi
+test_image.cpp:27: Failure
+      Expected: 0
+To be equal to: i.SetIndex(r)
+      Which is: -1
+[  FAILED  ] Image.SetIndex (0 ms)
+[----------] 1 test from Image (0 ms total)
+
+[----------] 1 test from Application
+[ RUN      ] Application.Init
+test_application.cpp:13: Failure
+      Expected: 0
+To be equal to: app.Init(a)
+      Which is: -1
+a
+test_application.cpp:14: Failure
+      Expected: 0
+To be equal to: app.Init(c)
+      Which is: -1
+c
+test_application.cpp:15: Failure
+      Expected: 0
+To be equal to: app.Init(b)
+      Which is: -1
+b
+test_application.cpp:16: Failure
+      Expected: 0
+To be equal to: app.Init(d)
+      Which is: -1
+d
+[  FAILED  ] Application.Init (0 ms)
+[----------] 1 test from Application (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 3 test cases ran. (156 ms total)
+[  PASSED  ] 2 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] Image.SetIndex
+[  FAILED  ] Application.Init
+
+ 2 FAILED TESTS

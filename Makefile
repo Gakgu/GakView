@@ -4,6 +4,7 @@ CPP = src/main.cpp \
 			src/image.cpp
 
 LIB = -lSDL2 \
+			-lSDL2_image \
 			-lboost_filesystem \
 			-lboost_system
 

@@ -1,60 +1,138 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
-#include "GakView/image.hpp"
+#include <GakView/image.hpp>
+#include <algorithm>
 
-// TODO : Fix this ugly code
-bool gakview::Image::Init(char **argv)
+using boost::filesystem::path;
+using boost::filesystem::initial_path;
+using std::string;
+
+namespace gakview
 {
-  using boost::filesystem::path;
+// return Succes : file path, fail : path()
+string Image::GetFilePath(char const **argv)
+{
+  path file_path = initial_path() / path(argv[1]);
+  if(exists(file_path) == true)
+  {
+    if(is_directory(file_path) == true)
+    {
+      file_path = file_path;
+    }
+    else
+      file_path = file_path.parent_path();
+  }
+  else if(exists(file_path.parent_path()) == true)
+    file_path = file_path.parent_path();
+  else
+    file_path = path();
+
+  return file_path.string();
+}
+
+string Image::GetFileName(char const **argv)
+{
+  string file_name;
+  
+  if(is_directory(initial_path() / path(argv[1])) == true)
+    file_name = path().string();
+  else
+    file_name = path(argv[1]).filename().string();
+
+  return file_name;
+}
+
+int Image::SetFileList(char const **argv)
+{
   using boost::filesystem::directory_entry;
   using boost::filesystem::directory_iterator;
-  using boost::filesystem::initial_path;
-  // TODO
-  // Add case of argv_[1] == NULL
-  path files_path(argv[1]);
-  path dir_path(initial_path());
 
-  for(directory_entry &x : directory_iterator(dir_path))
-    // TODO
-    // This code check file extension.
-    // It's operated but ugly.
+  int succes = 0;
+  if(GetFilePath(argv) == string())
+    succes = -1;
+  else
   {
-    File file = x.path().filename().string();
-    file = file.substr(file.find_last_of(".") + 1);
-    if( file == "bmp" || file == "jpg" || file == "png")
-      info.files.push_back(x.path().filename().string());
-  }
 
-  sort(info.files.begin(), info.files.end());
-  IndexInit(argv);
-
-  return true;
-}
-
-bool gakview::Image::IndexInit(char **argv)
-{
-  // Get index
-  // TODO : Add case of index_ == -1
-  for(unsigned int index = 0; index < info.files.size(); index++)
-    if(info.files[index] == argv[1])
+    for(directory_entry &x :
+        directory_iterator(GetFilePath(argv)))
     {
-      info.index = index;
-      break;
+      string file_extension = x.path().extension().string();
+      std::transform(file_extension.begin(), file_extension.end(), 
+          file_extension.begin(), ::tolower);
+
+      if(file_extension == string(".tag") ||
+          file_extension == string(".bmp") ||
+          file_extension == string(".pnm") ||
+          file_extension == string(".pbm") ||
+          file_extension == string(".ppm") ||
+          file_extension == string(".xpm") ||
+          file_extension == string(".xcf") ||
+          file_extension == string(".pcx") ||
+          file_extension == string(".gif") ||
+          file_extension == string(".jpg") ||
+          file_extension == string(".jpeg") ||
+          file_extension == string(".tif") ||
+          file_extension == string(".tiff") ||
+          file_extension == string(".lbm") ||
+          file_extension == string(".iff") ||
+          file_extension == string(".png"))
+        m_fileList.push_back(x.path().string());
     }
 
-  return true;
+    sort(m_fileList.begin(), m_fileList.end());
+  }
+
+  return succes;
 }
 
-void gakview::Image::Next()
+int Image::SetIndex(char const **argv)
 {
-  // TODO : use C++ caster
-  if(info.index < (signed)info.files.size() - 1)
-    info.index++;
+  int succes = 0;
+
+  if(m_fileList.size() == 0 || GetFileName(argv) == string())
+    succes = -1;
+  else
+  {
+    for(int i = 0; i < static_cast<int>(m_fileList.size()); i++)
+      if(path(m_fileList.at(i)).filename() == GetFileName(argv))
+      {
+        m_index = i;
+        break;
+      }
+
+    if(m_index == -1)
+      succes = -1;
+  }
+
+  return succes;
 }
 
-void gakview::Image::Previous()
+int Image::Next()
 {
-  if(info.index > 0)
-    info.index--;
+  int succes = 0;
+
+  if(m_index < static_cast<int>(m_fileList.size()) - 1)
+    m_index++;
+  else if(m_index == -1)
+    m_index++;
+  else
+    succes = -1;
+
+  return succes;
+}
+
+int Image::Previous()
+{
+  int succes = 0;
+
+  if(m_index > 0)
+    m_index--;
+  else if(m_index == -1)
+    m_index++;
+  else
+    succes = -1;
+
+  return succes;
+}
 }
