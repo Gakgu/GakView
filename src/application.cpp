@@ -9,50 +9,54 @@ Application::Application(char const **argv) : m_succes_init(-1)
 
 int Application::Init(char const **argv)
 {
-  if(m_image.SetFileList(argv) == 0)
-    if(m_window.Create() == 0)
-      m_succes_init = 0;
+  int succes = 0;
+  if(m_image.SetFileList(argv) != 0)
+    succes = -1;
+  m_image.SetIndex(argv);
 
-  return m_succes_init;
+  return succes;
 }
 
 int Application::Run()
 {
-  if(m_succes_init != 0)
-    return 0;
-
   int succes = 0;
-  bool quit = false;
-  SDL_Event event;
-  while(!quit)
+  if(m_window.Create() != 0)
+    succes = -1;
+  else
   {
-    while(SDL_PollEvent(&event) != 0)
+    m_window.Update(m_image.m_fileList.at(m_image.m_index));
+
+    bool quit = false;
+    SDL_Event event;
+    while(!quit)
     {
-      if(event.type == SDL_QUIT)
-        quit = true;
-      else if(event.type == SDL_KEYDOWN && event.key.repeat == 0)
+      while(SDL_PollEvent(&event) != 0)
       {
-        switch(event.key.keysym.sym)
+        if(event.type == SDL_QUIT)
+          quit = true;
+        else if(event.type == SDL_KEYDOWN && event.key.repeat == 0)
         {
-          case SDLK_UP:
-            quit = true;
-            break;
-          case SDLK_LEFT:
-            if(m_image.Previous())
-              if(!m_window.Update(m_image.m_fileList.at(m_image.m_index)))
-              {
-                succes = -1;
-                quit = true;
-              }
-            break;
-          case SDLK_RIGHT:
-            if(m_image.Next())
-              if(m_window.Update(m_image.m_fileList.at(m_image.m_index)))
-              {
-                succes = -1;
-                quit = true;
-              }
-            break;
+          switch(event.key.keysym.sym)
+          {
+            case SDLK_UP:
+              break;
+            case SDLK_LEFT:
+              if(m_image.Previous() == 0)
+                if(m_window.Update(m_image.m_fileList.at(m_image.m_index)) == -1)
+                {
+                  succes = -1;
+                  quit = true;
+                }
+              break;
+            case SDLK_RIGHT:
+              if(m_image.Next() == 0)
+                if(m_window.Update(m_image.m_fileList.at(m_image.m_index)) == -1)
+                {
+                  succes = -1;
+                  quit = true;
+                }
+              break;
+          }
         }
       }
     }

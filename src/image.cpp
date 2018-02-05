@@ -112,9 +112,7 @@ int Image::Next()
 {
   int succes = 0;
 
-  if(m_index < static_cast<int>(m_fileList.size()) - 1)
-    m_index++;
-  else if(m_index == -1)
+  if(m_index < static_cast<int>(m_fileList.size()) - 1 && m_index != -1)
     m_index++;
   else
     succes = -1;
@@ -128,8 +126,6 @@ int Image::Previous()
 
   if(m_index > 0)
     m_index--;
-  else if(m_index == -1)
-    m_index++;
   else
     succes = -1;
 
