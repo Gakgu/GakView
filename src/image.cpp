@@ -43,6 +43,35 @@ string Image::GetFileName(char const **argv)
   return file_name;
 }
 
+bool Image::IsImage(path const &file)
+{
+  bool is_image = true;
+  string file_extension = file.extension().string();
+
+  std::transform(file_extension.begin(), file_extension.end(), 
+      file_extension.begin(), ::tolower);
+
+  if(file_extension != string(".tag"))
+    if(file_extension != string(".bmp"))
+      if(file_extension != string(".pnm"))
+        if(file_extension != string(".pbm"))
+          if(file_extension != string(".ppm"))
+            if(file_extension != string(".xpm"))
+              if(file_extension != string(".xcf"))
+                if(file_extension != string(".pcx"))
+                  if(file_extension != string(".gif"))
+                    if(file_extension != string(".jpg"))
+                      if(file_extension != string(".jpeg"))
+                        if(file_extension != string(".tif"))
+                          if(file_extension != string(".tiff"))
+                            if(file_extension != string(".lbm"))
+                              if(file_extension != string(".iff"))
+                                if(file_extension != string(".png"))
+                                  is_image = false;
+
+  return is_image;
+}
+
 int Image::SetFileList(char const **argv)
 {
   using boost::filesystem::directory_entry;
@@ -53,30 +82,10 @@ int Image::SetFileList(char const **argv)
     succes = -1;
   else
   {
-
     for(directory_entry &x :
         directory_iterator(GetFilePath(argv)))
     {
-      string file_extension = x.path().extension().string();
-      std::transform(file_extension.begin(), file_extension.end(), 
-          file_extension.begin(), ::tolower);
-
-      if(file_extension == string(".tag") ||
-          file_extension == string(".bmp") ||
-          file_extension == string(".pnm") ||
-          file_extension == string(".pbm") ||
-          file_extension == string(".ppm") ||
-          file_extension == string(".xpm") ||
-          file_extension == string(".xcf") ||
-          file_extension == string(".pcx") ||
-          file_extension == string(".gif") ||
-          file_extension == string(".jpg") ||
-          file_extension == string(".jpeg") ||
-          file_extension == string(".tif") ||
-          file_extension == string(".tiff") ||
-          file_extension == string(".lbm") ||
-          file_extension == string(".iff") ||
-          file_extension == string(".png"))
+      if(IsImage(x.path()) == true)
         m_fileList.push_back(x.path().string());
     }
 

@@ -41,18 +41,19 @@ int Window::Create()
 int Window::Update(std::string &image_path)
 {
   int succes = 0;
-  /*
+
   // Clear screen
   if(SDL_FillRect(m_window_surface, NULL,
         SDL_MapRGB(m_window_surface->format, 0x00, 0x00, 0x00)) != 0)
     succes = -1;
-  */
 
+  // Draw screen
   if(image_path != std::string())
   {
     m_image_surface = IMG_Load(image_path.c_str());
     if(m_image_surface == NULL)
       succes = -1;
+    //m_image_surface.width();
 
     if(!SDL_BlitSurface(m_image_surface, NULL, m_window_surface, NULL))
       SDL_UpdateWindowSurface(m_window);

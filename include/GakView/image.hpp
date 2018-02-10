@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <SDL2/SDL.h>
+#include <boost/filesystem.hpp>
 
 namespace gakview
 {
@@ -20,6 +21,7 @@ class Image
     int SetIndex(char const **argv);
     std::vector<std::string> m_fileList;
     int m_index;
+    bool IsImage(boost::filesystem::path const &file);
   private:
     // Disallow copy constructor and assignment operator.
     Image(const Image&);
